@@ -1,6 +1,6 @@
-const express = require("express");
-const user = require("../src/controller/user.controlter");
-const bodyParser = require("body-parser");
+const express = require('express');
+const bodyParser = require('body-parser');
+const user = require('./controller/user.controller');
 
 
 const app = express(); 

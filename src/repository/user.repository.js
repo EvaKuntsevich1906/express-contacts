@@ -15,46 +15,70 @@ const getDataByIDDB = async (id) => {
 };
 
 const createDataDB = async (name, surname, birth, city, age) => {
-    const client = await pool.connect(); 
+    const client = await pool.connect();
 
-    const sql1 = `insert into users_info( birth, city, age) values ($1, $2, $3) returning *`;
-    const result1 = (await client.query(sql1, [birth, city, age])).rows;
+    try {
+        await client.query("BEGIN");
 
-    const sql2 = `insert into users(name, surname, info_id) values($1, $2, $3 ) returning *`;
-    const result2 = (await client.query(sql2, [name, surname, result1[0].id])).rows;
+        const sql1 = `insert into users_info( birth, city, age) values ($1, $2, $3) returning *`;
+        const result1 = (await client.query(sql1, [birth, city, age])).rows;
 
-    return { ...result1[0], ...result2[0] };
+        const sql2 = `insert into users(name, surname, info_id) values($1, $2, $3 ) returning *`;
+        const result2 = (await client.query(sql2, [name, surname, result1[0].id])).rows;
 
+        await client.query("COMMIT");
+
+        return {...result1[0], ...result2[0] };
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.log(`createDataDB: ${err.message}`);
+        return null;
+    }
 }
 
 const updateDataByIDDB = async (id, name, surname, birth, city, age) => {
     const client = await pool.connect();
 
-    const sql1 = `UPDATE users SET name=$1, surname=$2 WHERE info_id = $3 returning *`;
-    const result1 = (await client.query(sql1, [name, surname, id])).rows;
+    try {
+        await client.query("BEGIN");
 
-    const sql2 = ` UPDATE users_info SET birth=$1, city=$2, age=$3 WHERE id = $4 returning *`;
-    const result2 = (await client.query(sql2, [birth, city, age, id])).rows;
+        const sql1 = `UPDATE users SET name=$1, surname=$2 WHERE info_id = $3 returning *`;
+        const result1 = (await client.query(sql1, [name, surname, id])).rows;
 
-    return { ...result1[0], ...result2[0] };
+        const sql2 = ` UPDATE users_info SET birth=$1, city=$2, age=$3 WHERE id = $4 returning *`;
+        const result2 = (await client.query(sql2, [birth, city, age, id])).rows;
+
+        await client.query("COMMIT");
+
+        return { ...result1[0],...result2[0]};
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.log(`updateDataByIDDB: ${err.message}`);
+        return null;
+    }
+
 }
-
-const deleteDataByIDDB = async (id) =>  {
+const deleteDataByIDDB = async (id) => {
     const client = await pool.connect();
 
-    const sql1 = `DELETE FROM users WHERE info_id = $1 RETURNING *`;
-    const result1 = (await client.query(sql1, [id])).rows;
+    try {
+        await client.query("BEGIN");
 
-    const sql2 = `DELETE FROM users_info WHERE id = $1 RETURNING *`;
-    const result2 = (await client.query(sql2, [id])).rows;
+        const sql1 = `DELETE FROM users WHERE info_id = $1 RETURNING *`;
+        const result1 = (await client.query(sql1, [id])).rows;
 
-    return { ...result1[0], ...result2[0] };
+        const sql2 = `DELETE FROM users_info WHERE id = $1 RETURNING *`;
+        const result2 = (await client.query(sql2, [id])).rows;
+
+        await client.query("COMMIT");
+
+        return { ...result1[0], ...result2[0]};
+
+    } catch (err) {
+        await client.query("ROLLBACK");
+        console.log(`updateDataByIDDB: ${err.message}`);
+        return null;
+    }
 }
 
-module.exports = {
-    getAllDataDB, 
-    getDataByIDDB,
-    createDataDB, 
-    updateDataByIDDB, 
-    deleteDataByIDDB
-}
+module.exports = {getAllDataDB, getDataByIDDB, createDataDB, updateDataByIDDB, deleteDataByIDDB};
